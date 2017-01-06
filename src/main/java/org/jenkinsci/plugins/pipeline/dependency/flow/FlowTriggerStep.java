@@ -16,8 +16,6 @@ import hudson.model.ItemGroup;
 import hudson.model.Job;
 
 /**
- * Created by e3cmea on 1/6/17.
- *
  * @author Alexey Merezhin
  */
 public class FlowTriggerStep extends AbstractStepImpl {

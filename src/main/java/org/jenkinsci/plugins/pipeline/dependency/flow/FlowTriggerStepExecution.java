@@ -93,7 +93,7 @@ public class FlowTriggerStepExecution extends StepExecution {
      * @param project top project
      * @param projects resulting list
      */
-    private void createProjectList(AbstractProject project, Set<AbstractProject> projects) {
+    protected void createProjectList(AbstractProject project, Set<AbstractProject> projects) {
         for (AbstractProject currentProject: getUpstream(project)) {
             createProjectList(currentProject, projects);
         }

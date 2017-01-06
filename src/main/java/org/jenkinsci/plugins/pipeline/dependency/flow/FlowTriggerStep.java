@@ -14,7 +14,6 @@ import hudson.maven.MavenModuleSet;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
-import jenkins.model.ParameterizedJobMixIn;
 
 /**
  * Created by e3cmea on 1/6/17.
@@ -22,6 +21,7 @@ import jenkins.model.ParameterizedJobMixIn;
  * @author Alexey Merezhin
  */
 public class FlowTriggerStep extends AbstractStepImpl {
+    public static String STEP_NAME = "flowexec";
     private String job;
 
     @DataBoundConstructor
@@ -42,7 +42,7 @@ public class FlowTriggerStep extends AbstractStepImpl {
 
         @Override
         public String getFunctionName() {
-            return "flowexec";
+            return STEP_NAME;
         }
 
         @Override

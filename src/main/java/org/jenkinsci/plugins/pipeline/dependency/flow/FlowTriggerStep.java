@@ -17,6 +17,8 @@ import org.jenkinsci.plugins.workflow.cps.CpsStepContext;
 import org.jenkinsci.plugins.workflow.cps.CpsThread;
 import org.jenkinsci.plugins.workflow.cps.replay.ReplayAction;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.SynchronousStepExecution;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -44,7 +46,7 @@ import jenkins.tasks.SimpleBuildStep;
  *
  * @author Alexey Merezhin
  */
-public class FlowTriggerStep extends Builder implements SimpleBuildStep {
+public class FlowTriggerStep extends SynchronousStepExecution {
     private static final Logger LOGGER = Logger.getLogger(FlowTriggerStep.class.getName());
     private @CheckForNull String job;
 
@@ -57,7 +59,6 @@ public class FlowTriggerStep extends Builder implements SimpleBuildStep {
         return job;
     }
 
-    @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
             @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         LOGGER.info("Start flow with root job: " + getJob());
@@ -68,7 +69,34 @@ public class FlowTriggerStep extends Builder implements SimpleBuildStep {
         Set<AbstractProject> projects = new LinkedHashSet<>();
         createProjectList(rootProject, projects);
 
+        launcher.getChannel().g
 
+        String path = "/home/e3cmea/other_src/pipeline-dependency-flow-plugin/test.groovy";
+        FilePath cwd = new FilePath(new File(path));
+
+        CpsStepContext cps = (CpsStepContext) getContext();
+        CpsThread t = CpsThread.current();
+
+        CpsFlowExecution execution = t.getExecution();
+
+        String text = cwd.child(path).readToString();
+        String clazz = execution.getNextScriptName(path);
+        String newText = ReplayAction.replace(execution, clazz);
+        if (newText != null) {
+            launcher.getListener().getLogger().println("Replacing Groovy text with edited version");
+            text = newText;
+        }
+
+        Script script = execution.getShell().parse(text);
+
+        // execute body as another thread that shares the same head as this thread
+        // as the body can pause.
+        cps.newBodyInvoker(t.getGroup().export(script))
+           .withDisplayName(path)
+           // .withCallback(BodyExecutionCallback.wrap(cps))
+           .start(); // when the body is done, the load step is done
+
+        /*
         WorkflowJob releaseJob = jenkins.createProject(WorkflowJob.class, "release");
         StringBuffer definition = new StringBuffer();
         definition.append("node {\n");
@@ -80,6 +108,7 @@ public class FlowTriggerStep extends Builder implements SimpleBuildStep {
         }
         definition.append("}");
         releaseJob.setDefinition(new CpsFlowDefinition(definition.toString(), false));
+        */
     }
 
     /**
@@ -99,6 +128,11 @@ public class FlowTriggerStep extends Builder implements SimpleBuildStep {
         // MavenModuleSet rootProject = jenkins.getItemByFullName(jobName, MavenModuleSet.class);
         DependencyGraph dependencyGraph = jenkins.getDependencyGraph();
         return dependencyGraph.getUpstream(project);
+    }
+
+    @Override
+    protected Object run() throws Exception {
+        return null;
     }
 
     @Symbol("flowexec")

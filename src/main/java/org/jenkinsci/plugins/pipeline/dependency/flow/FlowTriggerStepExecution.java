@@ -1,7 +1,5 @@
 package org.jenkinsci.plugins.pipeline.dependency.flow;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +10,6 @@ import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution;
 import org.jenkinsci.plugins.workflow.cps.CpsStepContext;
 import org.jenkinsci.plugins.workflow.cps.CpsThread;
-import org.jenkinsci.plugins.workflow.cps.replay.ReplayAction;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
@@ -20,8 +17,6 @@ import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import com.google.inject.Inject;
 
 import groovy.lang.Script;
-import hudson.FilePath;
-import hudson.Launcher;
 import hudson.console.ModelHyperlinkNote;
 import hudson.maven.MavenModuleSet;
 import hudson.model.AbstractProject;
@@ -46,6 +41,35 @@ public class FlowTriggerStepExecution extends StepExecution {
     public boolean start() throws Exception {
         LOGGER.info("Start flow with root job: " + step.getJob());
 
+        String actionScript = generateActionScript();
+        listener.getLogger().println("Generated script:\n");
+        listener.getLogger().println(actionScript);
+        listener.getLogger().println();
+
+        /* Execute generated script */
+        CpsStepContext cps = (CpsStepContext) getContext();
+        CpsThread t = CpsThread.current();
+        CpsFlowExecution execution = t.getExecution();
+
+        Script script = execution.getShell().parse(actionScript);
+
+        // execute body as another thread that shares the same head as this thread as the body can pause.
+        cps.newBodyInvoker(t.getGroup().export(script))
+           .withDisplayName("Dependency Flow Actions")
+           .withCallback(BodyExecutionCallback.wrap(cps))
+           .start(); // when the body is done, the flow step is done
+
+        return false;
+    }
+
+    @Override
+    public void stop(@Nonnull Throwable cause) throws Exception {
+        // noop
+        //
+        // the head of the CPS thread that's executing the generated script should stop and that's all we need to do.
+    }
+
+    protected String generateActionScript() {
         Jenkins jenkins = Jenkins.getActiveInstance();
         MavenModuleSet rootProject = jenkins.getItemByFullName(step.getJob(), MavenModuleSet.class);
 
@@ -61,32 +85,7 @@ public class FlowTriggerStepExecution extends StepExecution {
             definition.append("\n");
         }
 
-        listener.getLogger().println("Generated script:\n");
-        listener.getLogger().println(definition.toString());
-        listener.getLogger().println();
-
-        /* Execute generated script */
-        CpsStepContext cps = (CpsStepContext) getContext();
-        CpsThread t = CpsThread.current();
-        CpsFlowExecution execution = t.getExecution();
-
-        Script script = execution.getShell().parse(definition.toString());
-
-        // execute body as another thread that shares the same head as this thread
-        // as the body can pause.
-        cps.newBodyInvoker(t.getGroup().export(script))
-           .withDisplayName("Dependency Flow Actions")
-           .withCallback(BodyExecutionCallback.wrap(cps))
-           .start(); // when the body is done, the flow step is done
-
-        return false;
-    }
-
-    @Override
-    public void stop(@Nonnull Throwable cause) throws Exception {
-        // noop
-        //
-        // the head of the CPS thread that's executing the generated script should stop and that's all we need to do.
+        return definition.toString();
     }
 
     /**

@@ -80,6 +80,16 @@
             <artifactId>workflow-support</artifactId>
             <version>2.6</version>
         </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-job</artifactId>
+            <version>2.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-cps</artifactId>
+            <version>2.23</version>
+        </dependency>
     </dependencies>
 
 </project>

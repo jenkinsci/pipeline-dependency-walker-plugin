@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.pipeline.dependency.flow;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -10,10 +11,18 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution;
+import org.jenkinsci.plugins.workflow.cps.CpsStepContext;
+import org.jenkinsci.plugins.workflow.cps.CpsThread;
+import org.jenkinsci.plugins.workflow.cps.replay.ReplayAction;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import groovy.lang.Script;
+import hudson.AboutJenkins;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -59,11 +68,18 @@ public class FlowTriggerStep extends Builder implements SimpleBuildStep {
         Set<AbstractProject> projects = new LinkedHashSet<>();
         createProjectList(rootProject, projects);
 
+
+        WorkflowJob releaseJob = jenkins.createProject(WorkflowJob.class, "release");
+        StringBuffer definition = new StringBuffer();
+        definition.append("node {\n");
         for (AbstractProject project : projects) {
             taskListener.getLogger().println("Trigger job: " + ModelHyperlinkNote.encodeTo("/" + project.getUrl(), project.getFullDisplayName()));
 
             LOGGER.info("do it for project " + project.getName());
+            definition.append("build \"" + project.getName() + "\"\n");
         }
+        definition.append("}");
+        releaseJob.setDefinition(new CpsFlowDefinition(definition.toString(), false));
     }
 
     /**

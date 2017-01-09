@@ -11,6 +11,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.dependency.walker.helpers.TestRepositoryLocator;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.tasks.Maven.MavenInstallation;
+import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 
 /**
@@ -37,26 +39,50 @@ public class FlowTriggerStepTest {
     @ClassRule public static LoggerRule logging = new LoggerRule();
     private static MavenInstallation mvn;
     private static WorkflowJob pipeJob;
-
     /*
-        Test project deps:
+        Dependencies of test projects:
         parent_a needs child_a
         parent_b needs child_a and child_b
         grand needs parent_a and parent_b
      */
+    private static final String[] TEST_PROJECTS = new String[]{"child_a", "child_b", "parent_a", "parent_b", "grand"};
+
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUpClass() throws Exception {
         mvn = configureMaven3();
-        String[] projectList = new String[]{"child_a", "child_b", "parent_a", "parent_b", "grand"};
-        for (String project : projectList) {
+        for (String project : TEST_PROJECTS) {
             MavenModuleSet job = createProject(project, mvn);
+            job.setGoals("clean");
             // TODO what if job has never been built?
             j.buildAndAssertSuccess(job);
         }
         // TODO how to build dep-graph without building jobs?
-        // j.jenkins.getDependencyGraph().build();
+        Jenkins.getInstance().rebuildDependencyGraph();
 
         pipeJob = j.jenkins.createProject(WorkflowJob.class, "pipe_test");
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        for (String project : TEST_PROJECTS) {
+            getJob(project).setGoals("clean install");
+        }
+    }
+
+    public static MavenModuleSet getJob(String jobName) {
+        return j.getInstance().getItemByFullName(jobName, MavenModuleSet.class);
+    }
+
+    public static MavenModuleSet createProject(String resource, MavenInstallation mvn) throws IOException {
+        MavenModuleSet project = j.createProject(MavenModuleSet.class, resource);
+        project.setRootPOM(resource + "/pom.xml");
+        project.setMaven(mvn.getName());
+        project.setScm(new ExtractResourceSCM(FlowTriggerStepTest.class.getResource(resource + ".zip")));
+
+        /* keep maven files inside work folder with jenkins installation */
+        project.setLocalRepository(new TestRepositoryLocator(mvn.getHomeDir()));
+
+        return project;
     }
 
     @Test
@@ -143,23 +169,6 @@ public class FlowTriggerStepTest {
             }
         }).scheduleBuild2(0);
         j.assertBuildStatus(Result.SUCCESS, build);
-    }
-
-    public MavenModuleSet getJob(String jobName) {
-        return j.getInstance().getItemByFullName(jobName, MavenModuleSet.class);
-    }
-
-    public static MavenModuleSet createProject(String resource, MavenInstallation mvn) throws IOException {
-        MavenModuleSet project = j.createProject(MavenModuleSet.class, resource);
-        project.setRootPOM(resource + "/pom.xml");
-        project.setMaven(mvn.getName());
-        project.setScm(new ExtractResourceSCM(FlowTriggerStepTest.class.getResource(resource + ".zip")));
-        project.setGoals("clean install");
-
-        /* keep maven files inside work folder with jenkins installation */
-        project.setLocalRepository(new TestRepositoryLocator(mvn.getHomeDir()));
-
-        return project;
     }
 
 }

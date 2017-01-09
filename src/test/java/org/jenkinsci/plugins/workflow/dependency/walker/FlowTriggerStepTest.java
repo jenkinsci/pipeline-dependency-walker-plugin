@@ -1,33 +1,25 @@
-package org.jenkinsci.plugins.pipeline.dependency.flow;
+package org.jenkinsci.plugins.workflow.dependency.walker;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 import static org.jvnet.hudson.test.ToolInstallations.configureMaven3;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.jenkinsci.plugins.pipeline.dependency.flow.helpers.TestRepositoryLocator;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.dependency.walker.helpers.TestRepositoryLocator;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.ExtractResourceSCM;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
 
-import hudson.FilePath;
-import hudson.maven.AbstractMavenBuild;
 import hudson.maven.MavenModuleSet;
-import hudson.maven.local_repo.LocalRepositoryLocator;
-import hudson.maven.local_repo.PerExecutorLocalRepositoryLocator;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Job;
@@ -61,6 +53,7 @@ public class FlowTriggerStepTest {
             // TODO what if job has never been built?
             j.buildAndAssertSuccess(job);
         }
+        // TODO how to build dep-graph without building jobs?
         // j.jenkins.getDependencyGraph().build();
 
         pipeJob = j.jenkins.createProject(WorkflowJob.class, "pipe_test");
@@ -70,7 +63,7 @@ public class FlowTriggerStepTest {
     public void actOnProjectWithoutDeps() throws Exception {
         int buildNumberChildA = getJob("child_a").getLastBuild().getNumber();
 
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec \"child_a\"", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk \"child_a\"", true));
         j.assertLogContains("Scheduling project: child_a", j.buildAndAssertSuccess(pipeJob));
 
         j.assertBuildStatusSuccess(getJob("child_a").getBuildByNumber(buildNumberChildA+1));
@@ -81,7 +74,7 @@ public class FlowTriggerStepTest {
         int buildNumberChildA = getJob("child_a").getLastBuild().getNumber();
         int buildNumberParentA = getJob("parent_a").getLastBuild().getNumber();
 
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec \"parent_a\"", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk \"parent_a\"", true));
         WorkflowRun workflowRun = j.buildAndAssertSuccess(pipeJob);
         j.assertLogContains("Scheduling project: child_a", workflowRun);
         j.assertLogContains("Scheduling project: parent_a", workflowRun);
@@ -92,7 +85,7 @@ public class FlowTriggerStepTest {
 
     @Test
     public void actOnProjectWithMultiDeps() throws Exception {
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec \"grand\"", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk \"grand\"", true));
         WorkflowRun workflowRun = j.buildAndAssertSuccess(pipeJob);
         j.assertLogContains("Scheduling project: child_a", workflowRun);
         j.assertLogContains("Scheduling project: child_b", workflowRun);
@@ -103,7 +96,7 @@ public class FlowTriggerStepTest {
 
     @Test
     public void testDepCalculation() throws Exception {
-        FlowTriggerStepExecution stepExecution = new FlowTriggerStepExecution();
+        WalkerStepExecution stepExecution = new WalkerStepExecution();
         Set<AbstractProject> projects = stepExecution.createProjectList(getJob("grand"));
         Set<AbstractProject> expectedList = new LinkedHashSet<>();
         expectedList.add(getJob("child_a"));
@@ -119,7 +112,7 @@ public class FlowTriggerStepTest {
     public void testCustomAction() throws Exception {
         int buildNumberChildA = getJob("child_a").getLastBuild().getNumber();
 
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"child_a\", jobAction: \"echo 'JOB_NAME'\"", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"child_a\", jobAction: \"echo 'JOB_NAME'\"", true));
         j.assertLogContains("echo 'child_a'", j.buildAndAssertSuccess(pipeJob));
 
         j.assertBuildStatusSuccess(getJob("child_a").getBuildByNumber(buildNumberChildA));
@@ -135,7 +128,7 @@ public class FlowTriggerStepTest {
         }).scheduleBuild2(0, new Action[0]);
         j.assertBuildStatus(Result.FAILURE, build);
 
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: true", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: true", true));
         build = (new ParameterizedJobMixIn() {
             protected Job asJob() {
                 return pipeJob;
@@ -143,7 +136,7 @@ public class FlowTriggerStepTest {
         }).scheduleBuild2(0);
         j.assertBuildStatus(Result.FAILURE, build);
 
-        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: false", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: false", true));
         build = (new ParameterizedJobMixIn() {
             protected Job asJob() {
                 return pipeJob;

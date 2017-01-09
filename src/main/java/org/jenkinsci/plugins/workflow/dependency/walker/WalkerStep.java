@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.pipeline.dependency.flow;
+package org.jenkinsci.plugins.workflow.dependency.walker;
 
 import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
@@ -19,14 +19,14 @@ import hudson.model.Job;
 /**
  * @author Alexey Merezhin
  */
-public class FlowTriggerStep extends AbstractStepImpl {
-    public static final String STEP_NAME = "flowexec";
+public class WalkerStep extends AbstractStepImpl {
+    public static final String STEP_NAME = "walk";
     private String job;
     private String jobAction = "build \"JOB_NAME\"";
     private Boolean failOnUnstable = false;
 
     @DataBoundConstructor
-    public FlowTriggerStep(String job) {
+    public WalkerStep(String job) {
         this.job = job;
     }
 
@@ -54,7 +54,7 @@ public class FlowTriggerStep extends AbstractStepImpl {
     public static class DescriptorImpl extends AbstractStepDescriptorImpl {
 
         public DescriptorImpl() {
-            super(FlowTriggerStepExecution.class);
+            super(WalkerStepExecution.class);
         }
 
         @Override

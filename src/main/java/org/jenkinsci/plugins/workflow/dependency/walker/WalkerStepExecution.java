@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.pipeline.dependency.flow;
+package org.jenkinsci.plugins.workflow.dependency.walker;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,7 +22,6 @@ import hudson.console.ModelHyperlinkNote;
 import hudson.maven.MavenModuleSet;
 import hudson.model.AbstractProject;
 import hudson.model.DependencyGraph;
-import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
@@ -30,18 +29,18 @@ import jenkins.model.Jenkins;
 /**
  * @author Alexey Merezhin
  */
-public class FlowTriggerStepExecution extends StepExecution {
+public class WalkerStepExecution extends StepExecution {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(FlowTriggerStepExecution.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WalkerStepExecution.class.getName());
 
     @StepContextParameter private transient TaskListener listener;
     @StepContextParameter private transient Run<?,?> invokingRun;
 
-    @Inject private transient FlowTriggerStep step;
+    @Inject private transient WalkerStep step;
 
     @Override
     public boolean start() throws Exception {
-        LOGGER.info("Start flow with root job: " + step.getJob());
+        LOGGER.info("Start walking from root job: " + step.getJob());
 
         Jenkins jenkins = Jenkins.getActiveInstance();
         MavenModuleSet rootProject = jenkins.getItemByFullName(step.getJob(), MavenModuleSet.class);
@@ -65,7 +64,7 @@ public class FlowTriggerStepExecution extends StepExecution {
 
         // execute body as another thread that shares the same head as this thread as the body can pause.
         cps.newBodyInvoker(t.getGroup().export(script))
-           .withDisplayName("Dependency Flow Actions")
+           .withDisplayName("Dependency Walker Actions")
            .withCallback(BodyExecutionCallback.wrap(cps))
            .start(); // when the body is done, the flow step is done
 

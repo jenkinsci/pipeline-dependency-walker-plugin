@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.pipeline.dependency.flow.helpers;
+package org.jenkinsci.plugins.workflow.dependency.walker.helpers;
 
 import java.io.File;
 

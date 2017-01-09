@@ -29,7 +29,12 @@ import hudson.maven.MavenModuleSet;
 import hudson.maven.local_repo.LocalRepositoryLocator;
 import hudson.maven.local_repo.PerExecutorLocalRepositoryLocator;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.Job;
+import hudson.model.Result;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.tasks.Maven.MavenInstallation;
+import jenkins.model.ParameterizedJobMixIn;
 
 /**
  * @author Alexey Merezhin
@@ -99,8 +104,7 @@ public class FlowTriggerStepTest {
     @Test
     public void testDepCalculation() throws Exception {
         FlowTriggerStepExecution stepExecution = new FlowTriggerStepExecution();
-        Set<AbstractProject> projects = new LinkedHashSet<>();
-        stepExecution.createProjectList(getJob("grand"), projects);
+        Set<AbstractProject> projects = stepExecution.createProjectList(getJob("grand"));
         Set<AbstractProject> expectedList = new LinkedHashSet<>();
         expectedList.add(getJob("child_a"));
         expectedList.add(getJob("parent_a"));
@@ -119,6 +123,33 @@ public class FlowTriggerStepTest {
         j.assertLogContains("echo 'child_a'", j.buildAndAssertSuccess(pipeJob));
 
         j.assertBuildStatusSuccess(getJob("child_a").getBuildByNumber(buildNumberChildA));
+    }
+
+    @Test
+    public void failIfDependentJobFailed() throws Exception {
+        getJob("child_a").setGoals("xxx");
+        QueueTaskFuture build = (new ParameterizedJobMixIn() {
+            protected Job asJob() {
+                return getJob("child_a");
+            }
+        }).scheduleBuild2(0, new Action[0]);
+        j.assertBuildStatus(Result.FAILURE, build);
+
+        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: true", true));
+        build = (new ParameterizedJobMixIn() {
+            protected Job asJob() {
+                return pipeJob;
+            }
+        }).scheduleBuild2(0);
+        j.assertBuildStatus(Result.FAILURE, build);
+
+        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: false", true));
+        build = (new ParameterizedJobMixIn() {
+            protected Job asJob() {
+                return pipeJob;
+            }
+        }).scheduleBuild2(0);
+        j.assertBuildStatus(Result.SUCCESS, build);
     }
 
     public MavenModuleSet getJob(String jobName) {

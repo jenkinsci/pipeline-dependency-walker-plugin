@@ -8,6 +8,9 @@
         <f:textbox id="${jobFieldId}"/>
     </f:entry>
     <f:entry field="jobAction" title="Action to perform">
-        <f:textbox/>
+        <f:textarea value='build "JOB_NAME"'/>
+    </f:entry>
+    <f:entry field="failOnUnstable" title="Fail if any of jobs recently failed">
+        <f:checkbox/>
     </f:entry>
 </j:jelly>

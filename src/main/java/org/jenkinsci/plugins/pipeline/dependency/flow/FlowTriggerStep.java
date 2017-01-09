@@ -22,12 +22,12 @@ import hudson.model.Job;
 public class FlowTriggerStep extends AbstractStepImpl {
     public static final String STEP_NAME = "flowexec";
     private String job;
-    private String jobAction;
+    private String jobAction = "build \"JOB_NAME\"";
+    private Boolean failOnUnstable = false;
 
     @DataBoundConstructor
     public FlowTriggerStep(String job) {
         this.job = job;
-        jobAction = "build 'JOB_NAME'";
     }
 
     public String getJob() {
@@ -40,6 +40,14 @@ public class FlowTriggerStep extends AbstractStepImpl {
 
     @DataBoundSetter public void setJobAction(String jobAction) {
         this.jobAction = jobAction;
+    }
+
+    public Boolean getFailOnUnstable() {
+        return failOnUnstable;
+    }
+
+    @DataBoundSetter public void setFailOnUnstable(Boolean failOnUnstable) {
+        this.failOnUnstable = failOnUnstable;
     }
 
     @Extension

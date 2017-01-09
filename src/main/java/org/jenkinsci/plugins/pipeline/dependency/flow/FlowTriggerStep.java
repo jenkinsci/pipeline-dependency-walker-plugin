@@ -7,6 +7,7 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
@@ -19,16 +20,26 @@ import hudson.model.Job;
  * @author Alexey Merezhin
  */
 public class FlowTriggerStep extends AbstractStepImpl {
-    public static String STEP_NAME = "flowexec";
+    public static final String STEP_NAME = "flowexec";
     private String job;
+    private String jobAction;
 
     @DataBoundConstructor
     public FlowTriggerStep(String job) {
         this.job = job;
+        jobAction = "build 'JOB_NAME'";
     }
 
     public String getJob() {
         return job;
+    }
+
+    public String getJobAction() {
+        return jobAction;
+    }
+
+    @DataBoundSetter public void setJobAction(String jobAction) {
+        this.jobAction = jobAction;
     }
 
     @Extension

@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.pipeline.dependency.flow;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.jvnet.hudson.test.ToolInstallations.configureMaven3;
 
 import java.io.File;
@@ -108,6 +109,16 @@ public class FlowTriggerStepTest {
         expectedList.add(getJob("grand"));
         assertEquals(expectedList, projects);
 
+    }
+
+    @Test
+    public void testCustomAction() throws Exception {
+        int buildNumberChildA = getJob("child_a").getLastBuild().getNumber();
+
+        pipeJob.setDefinition(new CpsFlowDefinition("flowexec job: \"child_a\", jobAction: \"echo 'JOB_NAME'\"", true));
+        j.assertLogContains("echo 'child_a'", j.buildAndAssertSuccess(pipeJob));
+
+        j.assertBuildStatusSuccess(getJob("child_a").getBuildByNumber(buildNumberChildA));
     }
 
     public MavenModuleSet getJob(String jobName) {

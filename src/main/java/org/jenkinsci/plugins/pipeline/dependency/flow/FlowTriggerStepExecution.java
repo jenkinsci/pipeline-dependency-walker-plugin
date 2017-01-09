@@ -81,7 +81,9 @@ public class FlowTriggerStepExecution extends StepExecution {
         for (AbstractProject project : projects) {
             listener.getLogger().println("Add job to the queue: " +
                     ModelHyperlinkNote.encodeTo("/" + project.getUrl(), project.getFullDisplayName()));
-            definition.append("build \"" + project.getName() + "\"");
+            // TODO allow to do stuff with project, not only build - it could be a free text with JOB_NAME place holder
+            String action = step.getJobAction().replaceAll("JOB_NAME", project.getName());
+            definition.append(action);
             definition.append("\n");
         }
 

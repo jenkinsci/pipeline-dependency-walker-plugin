@@ -7,4 +7,7 @@
     <f:entry field="job" title="Project to Build">
         <f:textbox id="${jobFieldId}"/>
     </f:entry>
+    <f:entry field="jobAction" title="Action to perform">
+        <f:textbox/>
+    </f:entry>
 </j:jelly>

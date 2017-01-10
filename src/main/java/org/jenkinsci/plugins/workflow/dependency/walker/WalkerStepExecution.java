@@ -128,15 +128,13 @@ public class WalkerStepExecution extends StepExecution {
         if (project.getScm() instanceof GitSCM) {
             GitSCM git = (GitSCM) project.getScm();
             String repo = "";
-            if (git.getRepositories().size() > 0 && git.getRepositories().get(0).getURIs().size() > 0) {
+            if (!git.getRepositories().isEmpty() && !git.getRepositories().get(0).getURIs().isEmpty()) {
                 repo = git.getRepositories().get(0).getURIs().get(0).toString();
             }
             String branch = "";
-            if (!"".equals(repo)) {
-                if (git.getBranches().size() > 0) {
-                    branch = git.getBranches().get(0).getName();
-                    branch = branch.replace("*/", "");
-                }
+            if (!"".equals(repo) && !git.getBranches().isEmpty()) {
+                branch = git.getBranches().get(0).getName();
+                branch = branch.replace("*/", "");
             }
             action = action.replaceAll("JOB_SCM_URL", repo)
                            .replaceAll("JOB_SCM_BRANCH", branch);
@@ -165,7 +163,6 @@ public class WalkerStepExecution extends StepExecution {
 
     private List<AbstractProject> getUpstream(AbstractProject project) {
         Jenkins jenkins = Jenkins.getActiveInstance();
-        // MavenModuleSet rootProject = jenkins.getItemByFullName(jobName, MavenModuleSet.class);
         DependencyGraph dependencyGraph = jenkins.getDependencyGraph();
         return dependencyGraph.getUpstream(project);
     }

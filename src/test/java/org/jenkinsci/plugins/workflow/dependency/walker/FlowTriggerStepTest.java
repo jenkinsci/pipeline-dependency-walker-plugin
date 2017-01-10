@@ -37,7 +37,6 @@ public class FlowTriggerStepTest {
     @ClassRule public static BuildWatcher buildWatcher = new BuildWatcher();
     @ClassRule public static JenkinsRule j = new JenkinsRule();
     @ClassRule public static LoggerRule logging = new LoggerRule();
-    private static MavenInstallation mvn;
     private static WorkflowJob pipeJob;
     /*
         Dependencies of test projects:
@@ -49,7 +48,7 @@ public class FlowTriggerStepTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        mvn = configureMaven3();
+        MavenInstallation mvn = configureMaven3();
         for (String project : TEST_PROJECTS) {
             MavenModuleSet job = createProject(project, mvn);
             job.setGoals("clean");
@@ -69,11 +68,11 @@ public class FlowTriggerStepTest {
         }
     }
 
-    public static MavenModuleSet getJob(String jobName) {
+    private static MavenModuleSet getJob(String jobName) {
         return j.getInstance().getItemByFullName(jobName, MavenModuleSet.class);
     }
 
-    public static MavenModuleSet createProject(String resource, MavenInstallation mvn) throws IOException {
+    private static MavenModuleSet createProject(String resource, MavenInstallation mvn) throws IOException {
         MavenModuleSet project = j.createProject(MavenModuleSet.class, resource);
         project.setRootPOM(resource + "/pom.xml");
         project.setMaven(mvn.getName());

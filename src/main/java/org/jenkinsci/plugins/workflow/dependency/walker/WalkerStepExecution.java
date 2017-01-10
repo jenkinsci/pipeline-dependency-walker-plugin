@@ -7,6 +7,10 @@ import java.util.logging.Logger;
 
 import javax.annotation.Nonnull;
 
+import org.jenkinsci.plugins.configfiles.maven.GlobalMavenSettingsConfig;
+import org.jenkinsci.plugins.configfiles.maven.MavenSettingsConfig;
+import org.jenkinsci.plugins.configfiles.maven.job.MvnGlobalSettingsProvider;
+import org.jenkinsci.plugins.configfiles.maven.job.MvnSettingsProvider;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution;
 import org.jenkinsci.plugins.workflow.cps.CpsStepContext;
 import org.jenkinsci.plugins.workflow.cps.CpsThread;
@@ -19,6 +23,7 @@ import com.google.inject.Inject;
 import groovy.lang.Script;
 import hudson.AbortException;
 import hudson.console.ModelHyperlinkNote;
+import hudson.maven.MavenModule;
 import hudson.maven.MavenModuleSet;
 import hudson.model.AbstractProject;
 import hudson.model.DependencyGraph;
@@ -118,6 +123,9 @@ public class WalkerStepExecution extends StepExecution {
      *   2. JOB_SCM_URL
      *   3. JOB_SCM_BRANCH
      *   4. JOB_SCM_CREDINTIALS_ID
+     *   5. POM_FILE
+     *   6. MVN_SETTINGS
+     *   7. MVN_GLOBAL_SETTINGS
      *
      * @param project where to get the values from
      * @param action generic script
@@ -125,6 +133,21 @@ public class WalkerStepExecution extends StepExecution {
      */
     public String replaceJobConstants(AbstractProject project, String action) {
         action = action.replaceAll("JOB_NAME", "'" + project.getName() + "'");
+
+        if (project instanceof MavenModuleSet) {
+            MavenModuleSet mvnProject = (MavenModuleSet) project;
+            action = action.replaceAll("POM_FILE", "'" + mvnProject.getRootPOM(null) + "'");
+            String mvnSettings = "";
+            if (mvnProject.getSettings() instanceof MvnSettingsProvider) {
+                mvnSettings = ((MvnSettingsProvider) mvnProject.getSettings()).getSettingsConfigId();
+            }
+            action = action.replaceAll("MVN_SETTINGS", "'" + mvnSettings + "'");
+            String mvnGlobalSettings = "";
+            if (mvnProject.getGlobalSettings() instanceof MvnGlobalSettingsProvider) {
+                mvnGlobalSettings = ((MvnGlobalSettingsProvider) mvnProject.getGlobalSettings()).getSettingsConfigId();
+            }
+            action = action.replaceAll("MVN_GLOBAL_SETTINGS", "'" + mvnGlobalSettings + "'");
+        }
 
         if (project.getScm() instanceof GitSCM) {
             GitSCM git = (GitSCM) project.getScm();

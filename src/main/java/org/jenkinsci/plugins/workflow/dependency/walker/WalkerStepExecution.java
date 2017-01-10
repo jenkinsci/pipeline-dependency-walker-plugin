@@ -117,6 +117,7 @@ public class WalkerStepExecution extends StepExecution {
      *   1. JOB_NAME
      *   2. JOB_SCM_URL
      *   3. JOB_SCM_BRANCH
+     *   4. JOB_SCM_CREDINTIALS_ID
      *
      * @param project where to get the values from
      * @param action generic script
@@ -132,12 +133,19 @@ public class WalkerStepExecution extends StepExecution {
                 repo = git.getRepositories().get(0).getURIs().get(0).toString();
             }
             String branch = "";
-            if (!"".equals(repo) && !git.getBranches().isEmpty()) {
-                branch = git.getBranches().get(0).getName();
-                branch = branch.replace("*/", "");
+            String credentialsId = "";
+            if (!"".equals(repo)) {
+                if (!git.getBranches().isEmpty()) {
+                    branch = git.getBranches().get(0).getName();
+                    branch = branch.replace("*/", "");
+                }
+                if (!git.getUserRemoteConfigs().isEmpty()) {
+                    credentialsId = git.getUserRemoteConfigs().get(0).getCredentialsId();
+                }
             }
             action = action.replaceAll("JOB_SCM_URL", repo)
-                           .replaceAll("JOB_SCM_BRANCH", branch);
+                           .replaceAll("JOB_SCM_BRANCH", branch)
+                           .replaceAll("JOB_SCM_CREDINTIALS_ID", credentialsId);
         }
         return action;
     }

@@ -24,6 +24,7 @@ import hudson.model.AbstractProject;
 import hudson.model.DependencyGraph;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.git.GitSCM;
 import jenkins.model.Jenkins;
 
 /**
@@ -97,16 +98,50 @@ public class WalkerStepExecution extends StepExecution {
 
     protected String generateActionScript(Set<AbstractProject> projects) {
         /* Generate flow script */
-        StringBuffer definition = new StringBuffer();
+        StringBuilder definition = new StringBuilder();
         for (AbstractProject project : projects) {
             listener.getLogger().println("Add job to the queue: " +
                     ModelHyperlinkNote.encodeTo("/" + project.getUrl(), project.getFullDisplayName()));
-            String action = step.getJobAction().replaceAll("JOB_NAME", project.getName());
+
+            String action = step.getJobAction();
+            action = replaceJobConstants(project, action);
             definition.append(action);
             definition.append("\n");
         }
 
         return definition.toString();
+    }
+
+    /**
+     * Function generates a project-specific script from generic by replacing all matches of constants:
+     *   1. JOB_NAME
+     *   2. JOB_SCM_URL
+     *   3. JOB_SCM_BRANCH
+     *
+     * @param project where to get the values from
+     * @param action generic script
+     * @return project-specific script
+     */
+    public String replaceJobConstants(AbstractProject project, String action) {
+        action = action.replaceAll("JOB_NAME", project.getName());
+
+        if (project.getScm() instanceof GitSCM) {
+            GitSCM git = (GitSCM) project.getScm();
+            String repo = "";
+            if (git.getRepositories().size() > 0 && git.getRepositories().get(0).getURIs().size() > 0) {
+                repo = git.getRepositories().get(0).getURIs().get(0).toString();
+            }
+            String branch = "";
+            if (!"".equals(repo)) {
+                if (git.getBranches().size() > 0) {
+                    branch = git.getBranches().get(0).getName();
+                    branch = branch.replace("*/", "");
+                }
+            }
+            action = action.replaceAll("JOB_SCM_URL", repo)
+                           .replaceAll("JOB_SCM_BRANCH", branch);
+        }
+        return action;
     }
 
     /**

@@ -22,7 +22,7 @@ import hudson.model.Job;
 public class WalkerStep extends AbstractStepImpl {
     public static final String STEP_NAME = "walk";
     private String job;
-    private String jobAction = "build \"JOB_NAME\"";
+    private String jobAction = "build JOB_NAME";
     private Boolean failOnUnstable = false;
 
     @DataBoundConstructor

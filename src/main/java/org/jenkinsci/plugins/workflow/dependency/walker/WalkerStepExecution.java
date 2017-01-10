@@ -124,7 +124,7 @@ public class WalkerStepExecution extends StepExecution {
      * @return project-specific script
      */
     public String replaceJobConstants(AbstractProject project, String action) {
-        action = action.replaceAll("JOB_NAME", project.getName());
+        action = action.replaceAll("JOB_NAME", "'" + project.getName() + "'");
 
         if (project.getScm() instanceof GitSCM) {
             GitSCM git = (GitSCM) project.getScm();
@@ -143,9 +143,9 @@ public class WalkerStepExecution extends StepExecution {
                     credentialsId = git.getUserRemoteConfigs().get(0).getCredentialsId();
                 }
             }
-            action = action.replaceAll("JOB_SCM_URL", repo)
-                           .replaceAll("JOB_SCM_BRANCH", branch)
-                           .replaceAll("JOB_SCM_CREDINTIALS_ID", credentialsId);
+            action = action.replaceAll("JOB_SCM_URL", "'" + repo + "'")
+                           .replaceAll("JOB_SCM_BRANCH", "'" + branch + "'")
+                           .replaceAll("JOB_SCM_CREDINTIALS_ID", "'" + credentialsId + "'");
         }
         return action;
     }

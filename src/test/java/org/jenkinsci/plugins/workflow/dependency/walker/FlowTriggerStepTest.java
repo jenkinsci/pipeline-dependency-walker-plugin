@@ -137,7 +137,7 @@ public class FlowTriggerStepTest {
     public void testCustomAction() throws Exception {
         int buildNumberChildA = getJob("child_a").getLastBuild().getNumber();
 
-        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"child_a\", jobAction: \"echo 'JOB_NAME'\"", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"child_a\", jobAction: \"echo JOB_NAME\"", true));
         j.assertLogContains("echo 'child_a'", j.buildAndAssertSuccess(pipeJob));
 
         j.assertBuildStatusSuccess(getJob("child_a").getBuildByNumber(buildNumberChildA));
@@ -153,7 +153,7 @@ public class FlowTriggerStepTest {
         }).scheduleBuild2(0, new Action[0]);
         j.assertBuildStatus(Result.FAILURE, build);
 
-        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: true", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo JOB_NAME\", failOnUnstable: true", true));
         build = (new ParameterizedJobMixIn() {
             protected Job asJob() {
                 return pipeJob;
@@ -161,7 +161,7 @@ public class FlowTriggerStepTest {
         }).scheduleBuild2(0);
         j.assertBuildStatus(Result.FAILURE, build);
 
-        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo 'JOB_NAME'\", failOnUnstable: false", true));
+        pipeJob.setDefinition(new CpsFlowDefinition("walk job: \"parent_a\", jobAction: \"echo JOB_NAME\", failOnUnstable: false", true));
         build = (new ParameterizedJobMixIn() {
             protected Job asJob() {
                 return pipeJob;

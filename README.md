@@ -29,8 +29,8 @@ node {
         echo "use maven repo $mvnRepo"
 
         walk job: 'parent-project', jobAction: '''
-            dir('JOB_NAME') {
-                git url: 'JOB_SCM_URL', branch: 'JOB_SCM_BRANCH'
+            dir(JOB_NAME) {
+                git url: JOB_SCM_URL, branch: JOB_SCM_BRANCH, credentialsId: JOB_SCM_CREDINTIALS_ID
                 withMaven(maven: 'mvn', mavenLocalRepo: mvnRepo) {
                     sh "mvn clean install"
                 }
@@ -56,7 +56,7 @@ Example of pipeline configuration:
 ```groovy
 node {
     stage('build') {
-        walk job: 'parent-project', failOnUnstable: true, jobAction: 'release "JOB_NAME"'
+        walk job: 'parent-project', failOnUnstable: true, jobAction: 'release JOB_NAME'
     }
 }
 ```

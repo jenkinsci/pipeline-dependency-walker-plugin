@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
     <groupId>org.jenkins-ci.plugins.workflow</groupId>
-    <artifactId>pipeline-dependency-walker-plugin</artifactId>
+    <artifactId>pipeline-dependency-walker</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
 

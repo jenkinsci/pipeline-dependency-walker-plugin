@@ -3,5 +3,5 @@
   This view is used to render the installed plugins page.
 -->
 <div>
-    Plugin allows to execute a pipeline task for the job and all its downstream jobs.
+    Plugin allows executing a pipeline task for the job and all its downstream jobs.
 </div>

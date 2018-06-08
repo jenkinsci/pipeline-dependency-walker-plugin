@@ -67,7 +67,7 @@ How to develop
 First run a development instance of jenkins by executing a command
    mvn hpi:run
 
-Go to [jenkins development instance](http://localhost:8080/jenkins) and configure as follwoing:
+Go to [jenkins development instance](http://localhost:8080/jenkins) and configure as following:
 1. In [system configuration](http://localhost:8080/jenkins/configure) click on `Maven installations...` button and configure:
   * Set `Name` to `mvn`
   * deselect`Install automatically`
